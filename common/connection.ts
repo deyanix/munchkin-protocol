@@ -29,7 +29,7 @@ interface ReceiveQueueItem<Res = any> {
 }
 
 
-export class MunchkinConnection<L extends MunchkinConnectionListener> {
+export class MunchkinConnection {
     public static isConnectionMessage(obj: any): obj is ConnectionMessage {
         return (
             typeof obj === 'object' && obj !== null &&
@@ -43,14 +43,11 @@ export class MunchkinConnection<L extends MunchkinConnectionListener> {
     private _sendQueue: SendQueueItem[] = [];
     private _receiveQueue: ReceiveQueueItem[] = [];
     private _nextMessageId: number = 1;
-    private _listeners: MunchkinConnectionListenerEntry[] = [];
 
     public constructor(socket: MunchkinSocket) {
         this._socket = socket;
         this._init();
     }
-
-    public void on(name: keyof )
 
     public dequeue(): void {
         this._deflating = true;

@@ -50,13 +50,13 @@ export interface MunchkinSocketOptions {
 }
 
 export interface MunchkinSocketEventMap {
-    message: Message;
-    error: {
+    message: (msg: Message) => void;
+    error: (err: {
         reason: string,
         error?: unknown,
         message?: Message
-    }
-    close: undefined;
+    }) => void
+    close: () => void;
 }
 
 export class MunchkinSocket extends MunchkinEmitter<MunchkinSocketEventMap> {
@@ -97,7 +97,7 @@ export class MunchkinSocket extends MunchkinEmitter<MunchkinSocketEventMap> {
             }
         })
         this._socket.on('close', () => {
-            this.emit('close', undefined);
+            this.emit('close');
         })
     }
 
@@ -114,7 +114,6 @@ export class MunchkinSocket extends MunchkinEmitter<MunchkinSocketEventMap> {
             if (this._currentMessage.isCompleted()) {
                 this._handleCompleted();
             }
-
             data = data.subarray(endIndex);
         }
 

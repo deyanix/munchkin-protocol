@@ -2,31 +2,36 @@ import EventEmitter from "events";
 
 export type EventMap = Record<string, (...args: any[]) => any>;
 
-export type EventKey<Map extends EventMap> = keyof Map;
+export type EventKey<Map = EventMap> = keyof Map;
+
+export type EventCallbackParameters<
+    Map = EventMap,
+    Key extends EventKey<Map> = EventKey<Map>
+> = Map[Key] extends (...args: any[]) => any ? Parameters<Map[Key]> : any[];
 
 export type EventReceiver<
-    Map extends EventMap,
+    Map = EventMap,
     Key extends EventKey<Map> = EventKey<Map>,
     Callback extends Map[Key] = Map[Key]
-> = (...args: Parameters<Callback>) => ReturnType<Callback>
+> = (...args: EventCallbackParameters<Map, Key>) => void
 
 export type EventEmit<
-    Map extends EventMap,
+    Map = EventMap,
     Key extends EventKey<Map> = EventKey<Map>,
     Callback extends Map[Key] = Map[Key]
-> = (event: Key, ...args: Parameters<Callback>) => ReturnType<Callback>
+> = (event: Key, ...args: EventCallbackParameters<Map, Key>) => void
 
-export interface Emitter<Map extends EventMap> {
+export interface Emitter<Map = EventMap> {
     on<K extends EventKey<Map>>(eventName: K, fn: EventReceiver<Map, K>): void;
     off<K extends EventKey<Map>>(eventName: K, fn: EventReceiver<Map, K>): void;
     emit: EventEmit<Map>;
 }
 
-export type EmitterListeners<Map extends EventMap> = {
+export type EmitterListeners<Map = EventMap> = {
     [key in EventKey<Map>]?: EventReceiver<Map, key>[]
 }
 
-export class MunchkinEmitter<Map extends EventMap> implements Emitter<Map> {
+export class MunchkinEmitter<Map = EventMap> implements Emitter<Map> {
     private listeners: EmitterListeners<Map> = {};
 
     on<K extends EventKey<Map>>(eventName: K, fn: EventReceiver<Map, K>): void {
@@ -50,18 +55,7 @@ export class MunchkinEmitter<Map extends EventMap> implements Emitter<Map> {
         eventListeners.slice(index, 1);
     }
 
-    emit<K extends EventKey<Map>>(event: K, ...args: Parameters<Map[K]>): ReturnType<Map[K]> {
+    emit<K extends EventKey<Map>>(event: K, ...args: EventCallbackParameters<Map, K>): void {
         this.listeners[event]?.forEach(fn => fn(...args));
     }
 }
-
-const emitter = new MunchkinEmitter<{
-    a: () => string,
-    b: () => number,
-    c: (a: number) => string,
-    d: (a: boolean, b: boolean) => number
-}>()
-
-emitter.on('d', (a, b) => {
-    return 1
-})
