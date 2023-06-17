@@ -1,5 +1,5 @@
 import * as net from 'net';
-import {Message, MunchkinSocket} from "../common/socket";
+import {MunchkinSocket} from "../common/socket";
 import {Logger} from "../common/logger";
 import {MunchkinConnection} from "../common/connection";
 
@@ -8,11 +8,11 @@ export interface MunchkinClientOptions {
 }
 
 export class MunchkinClient {
-    private _socket: net.Socket;
-    private _munchkinSocket: MunchkinSocket;
-    private _munchkinConnection: MunchkinConnection;
-    private _options: MunchkinClientOptions;
-    private _logger: Logger;
+    private readonly _socket: net.Socket;
+    private readonly _munchkinSocket: MunchkinSocket;
+    private readonly _munchkinConnection: MunchkinConnection;
+    private readonly _options: MunchkinClientOptions;
+    private readonly _logger: Logger;
 
     public constructor(options: MunchkinClientOptions) {
         this._socket = new net.Socket();
@@ -30,7 +30,14 @@ export class MunchkinClient {
             this._logger.log('Connected!');
 
             Array.from({length: 15})
-                .map((_, i) => setTimeout(() => this._munchkinConnection.request(i).then((data) => this._logger.log(i, data)).catch((err) => this._logger.error(err)), Math.random() * 1000))
+                .forEach((_, i) => setTimeout(async () => {
+                    try {
+                        const data = await this._munchkinConnection.request('/test', i);
+                        this._logger.log(i, data)
+                    } catch (err) {
+                        this._logger.catch(err);
+                    }
+                }, Math.random() * 1000))
 
         });
     }

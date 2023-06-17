@@ -1,11 +1,18 @@
 import {Message, MunchkinSocket} from "./socket";
+import {Emitter, MunchkinEmitter} from "./emitter";
 
 export type ConnectionMessage<T = any> = {
+
     data: T;
 } & ({
     type: 'event'
+    action: string;
 } | {
-    type: 'request' | 'response';
+    type: 'request';
+    action: string;
+    id: number;
+} | {
+    type: 'response';
     id: number;
 })
 
@@ -38,13 +45,17 @@ export class MunchkinConnection {
         )
     }
 
-    private _socket: MunchkinSocket;
+    public readonly requests: Emitter;
+    public readonly events: Emitter;
+    private readonly _socket: MunchkinSocket;
     private _deflating = false;
-    private _sendQueue: SendQueueItem[] = [];
-    private _receiveQueue: ReceiveQueueItem[] = [];
+    private readonly _sendQueue: SendQueueItem[] = [];
+    private readonly _receiveQueue: ReceiveQueueItem[] = [];
     private _nextMessageId: number = 1;
 
     public constructor(socket: MunchkinSocket) {
+        this.requests = new MunchkinEmitter();
+        this.events = new MunchkinEmitter();
         this._socket = socket;
         this._init();
     }
@@ -62,17 +73,21 @@ export class MunchkinConnection {
         this._deflating = false;
     }
 
-
-    public async emit<Req>(data: Req): Promise<void> {
+    public async emit<Req>(action: string, data: Req): Promise<void> {
         await this._send({
-            type: 'event', data
+            type: 'event',
+            action,
+            data,
         });
     }
 
-    public async request<Req, Res>(data: Req): Promise<Res> {
+    public async request<Req, Res>(action: string, data: Req): Promise<Res> {
         const id = this._nextMessageId++;
         await this._send({
-            type: 'request', id, data
+            type: 'request',
+            action,
+            id,
+            data
         });
         return new Promise((resolve, reject) => {
             const timeoutId = setTimeout(() => {
@@ -84,6 +99,14 @@ export class MunchkinConnection {
         })
     }
 
+    public async response<Req>(id: number, data: Req): Promise<void> {
+        await this._send({
+            type: 'response',
+            id,
+            data,
+        });
+    }
+
     private _init(): void {
         this._socket.on('message', (msg) => {
             const msgData = msg.toObject();
@@ -91,14 +114,10 @@ export class MunchkinConnection {
                 return;
             }
 
-            if (msgData.type === 'request') {
-                setTimeout(() => {
-                    this._send({
-                        type: 'response', id: msgData.id, data: {
-                            addon: 'Dupa', previous: msgData.data
-                        }
-                    })
-                }, Math.random() * 1000)
+            if (msgData.type === 'event') {
+                this.events.emit(msgData.action, msgData.data);
+            } else if (msgData.type === 'request') {
+                this.requests.emit(msgData.action, msgData.data, msgData.id);
             } else if (msgData.type === 'response') {
                 const itemIndex = this._receiveQueue
                     .findIndex(i => i.id === msgData.id);

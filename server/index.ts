@@ -9,10 +9,10 @@ export interface MunchkinServerOptions {
 }
 
 export class MunchkinServer extends EventEmitter{
-    private _server: net.Server;
-    private _options: MunchkinServerOptions;
-    private _logger: Logger;
-    private _sockets: MunchkinSocket[] = [];
+    private readonly _server: net.Server;
+    private readonly _options: MunchkinServerOptions;
+    private readonly _logger: Logger;
+    private readonly _sockets: MunchkinSocket[] = [];
 
     public constructor(options: MunchkinServerOptions) {
         super();
@@ -34,8 +34,9 @@ export class MunchkinServer extends EventEmitter{
                 {timeout: this._options.timeout}
             );
             const munchkinConnection = new MunchkinConnection(munchkinSocket);
-            Array.from({length: 15})
-                .map((_, i) => setTimeout(() => munchkinConnection.request(i).then((data) => this._logger.log(i, data)).catch((err) => this._logger.error(err)), Math.random() * 1000))
+            munchkinConnection.requests.on('/test', (index: number, id: number) => {
+                munchkinConnection.response(id, {fromServer: index});
+            })
 
             this._sockets.push(munchkinSocket);
         });
