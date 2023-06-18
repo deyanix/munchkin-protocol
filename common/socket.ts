@@ -1,5 +1,4 @@
 import * as net from "net";
-import EventEmitter from "events";
 import {Logger} from "./logger";
 import {MunchkinEmitter} from "./emitter";
 

@@ -1,5 +1,3 @@
-import EventEmitter from "events";
-
 export type EventMap = Record<string, (...args: any[]) => any>;
 
 export type EventKey<Map = EventMap> = keyof Map;
@@ -52,7 +50,7 @@ export class MunchkinEmitter<Map = EventMap> implements Emitter<Map> {
             return;
         }
 
-        eventListeners.slice(index, 1);
+        eventListeners.splice(index, 1);
     }
 
     emit<K extends EventKey<Map>>(event: K, ...args: EventCallbackParameters<Map, K>): void {

@@ -2,7 +2,6 @@ import {Message, MunchkinSocket} from "./socket";
 import {Emitter, MunchkinEmitter} from "./emitter";
 
 export type ConnectionMessage<T = any> = {
-
     data: T;
 } & ({
     type: 'event'
@@ -45,8 +44,8 @@ export class MunchkinConnection {
         )
     }
 
-    public readonly requests: Emitter;
-    public readonly events: Emitter;
+    public readonly requests: Emitter<Record<string, (data: any, id: number) => void>>;
+    public readonly events: Emitter<Record<string, (data: any) => void>>;
     private readonly _socket: MunchkinSocket;
     private _deflating = false;
     private readonly _sendQueue: SendQueueItem[] = [];
